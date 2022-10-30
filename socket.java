@@ -20,9 +20,9 @@ public class ClientProgram
             // sends output to the socket
             out = new DataOutputStream(socket.getOutputStream());
         } 
-        catch (UnknownHostException u) {
-            System.out.println(u);
-        } 
+        // catch (UnknownHostException u) {
+        //     System.out.println(u);
+        // } 
         catch (IOException i) {
             System.out.println(i);
         } 
