@@ -49,8 +49,10 @@ public class Client
 	}
 
 	public byte[] query(String QName, String QType) throws IOException{
+
+		byte[] DNS_QueryMessage = convertToDNSMessage(QName, QType);
 		// send query
-		this.output.write(convertToDNSMessage(QName, QType));
+		this.output.write(DNS_QueryMessage);
 		this.output.flush();
 
 		// get the total message length
@@ -59,20 +61,27 @@ public class Client
 		int length = ((LengthBuffer[0] & 0xff) << 8) | (LengthBuffer[1] & 0xff);
 
 
-		byte[] bytes = new byte[length];
-		this.input.read(bytes);
+		byte[] DNS_AnswerMessage = new byte[length];
+		this.input.read(DNS_AnswerMessage);
 
 		// convert the response to Litte indian
 		ByteBuffer  ResponseBuffer = ByteBuffer.allocate(length);
-		ResponseBuffer.put(bytes);
+		ResponseBuffer.put(DNS_AnswerMessage);
 		ResponseBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
 		return ResponseBuffer.array();
-		
 	}
+
+	private String parseAnswer(byte[] ResponseBuffer){
+		int length = ResponseBuffer.length; 
+
+	}
+
 	public void printAnswer(String QName, String QType) throws IOException{
 		byte[] ResponseBuffer = query(QName, QType);
-		System.out.println();
+
+		String Answer = parseAnswer(ResponseBuffer);
+		System.out.println(Answer);
 	}
 
 	public static void main(String[] args) throws IOException{
@@ -83,6 +92,31 @@ public class Client
 		Client client = new Client(DNS_IP);
 
 
-		client.printAnswer(QName, QType) ;
+		client.printAnswer(QName, QType);
 	}
 }
+
+
+/*public class Message
+{
+	byte[] Header;
+
+	this(int id, ){
+		this.Header = new byte[6];
+	}
+}
+
+public class QMessage extends Message
+{
+	byte[] Question;
+
+	this(){
+		super();
+
+	}
+	
+}
+public class AMessage extends Message
+{
+	
+}*/
