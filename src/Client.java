@@ -38,7 +38,7 @@ public class Client
 	}
 
 
-	public byte[] convertToDNSMessage(String QName, String QType){
+	public byte[] craftDNSQuery(String QName, String QType){
 
 		byte[] Header = new byte[6];
 
@@ -50,7 +50,7 @@ public class Client
 
 	public byte[] query(String QName, String QType) throws IOException{
 
-		byte[] DNS_QueryMessage = convertToDNSMessage(QName, QType);
+		byte[] DNS_QueryMessage = craftDNSQuery(QName, QType);
 		// send query
 		this.output.write(DNS_QueryMessage);
 		this.output.flush();
@@ -65,22 +65,57 @@ public class Client
 		this.input.read(DNS_AnswerMessage);
 
 		// convert the response to Litte indian
-		ByteBuffer  ResponseBuffer = ByteBuffer.allocate(length);
-		ResponseBuffer.put(DNS_AnswerMessage);
-		ResponseBuffer.order(ByteOrder.LITTLE_ENDIAN);
+		ByteBuffer  responseBuffer = ByteBuffer.allocate(length);
+		responseBuffer.put(DNS_AnswerMessage);
+		responseBuffer.order(ByteOrder.LITTLE_ENDIAN); // it may be usefull to get  
 
-		return ResponseBuffer.array();
+		return responseBuffer.array();
 	}
 
-	private String parseAnswer(byte[] ResponseBuffer){
-		int length = ResponseBuffer.length; 
+	private String parseAnswer(byte[] responseBuffer) {
 
+		String Answer = new String();
+		int len = responseBuffer.length;
+
+		boolean QR = responseBuffer[len - 16][7];
+
+		int QDCOUNT = ((responseBuffer[len-4] & 0xff) << 8) | (responseBuffer[len-3] & 0xff);
+		int ANCOUNT = ((responseBuffer[len-6] & 0xff) << 8) | (responseBuffer[len-5] & 0xff);
+
+
+		// number of possible Question bytes to skip
+		int questions_length = 0;
+		for (int i = 0, newRR = 6*2+1, len_domaine = responseBuffer[newRR];
+			 i < QNCOUNT;
+			 i++, newRR = responseBuffer[len_domaine + 2*2])
+		{
+			questions_length + newRR + 4*2 + RDLENGTH;
+
+			("Answer (TYPE="++", TTL="++", DATA=\"MS"++"\")")
+		}
+
+//		int end_Question_Entries = QDCOUNT + questions_length;
+
+
+
+
+		// looping over Record Resoures in the answer cas
+		for (int i = 0, newRR = questions_length+1, len_name = responseBuffer[newRR],
+			 RDLENGTH = responseBuffer[len_name+4*2+1];
+			 i < ANCOUNT;
+			 i++, newRR = responseBuffer[len_name + 4*2 + RDLENGTH + 1],
+			  len_name = responseBuffer[newRR], RDLENGTH = responseBuffer[len_name+4*2+1])
+		{
+			System.stdout
+		}
+
+		// return .toString();
 	}
 
 	public void printAnswer(String QName, String QType) throws IOException{
-		byte[] ResponseBuffer = query(QName, QType);
 
-		String Answer = parseAnswer(ResponseBuffer);
+		byte[] responseBuffer = query(QName, QType);
+		String Answer = parseAnswer(responseBuffer);
 		System.out.println(Answer);
 	}
 
@@ -90,6 +125,8 @@ public class Client
         String QType = args[2];
 
 		Client client = new Client(DNS_IP);
+
+		StdOut.println("Question (NS="+DNS_IP+", NAME="+QName+", TYPE="+QType+")");
 
 
 		client.printAnswer(QName, QType);
